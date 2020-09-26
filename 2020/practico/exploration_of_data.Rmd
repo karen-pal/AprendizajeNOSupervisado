@@ -1,0 +1,186 @@
+---
+jupyter:
+  jupytext:
+    text_representation:
+      extension: .Rmd
+      format_name: rmarkdown
+      format_version: '1.2'
+      jupytext_version: 1.5.0
+  kernelspec:
+    display_name: Python 3
+    language: python
+    name: python3
+---
+
+# Dataset
+
+-    Every player available in FIFA 20
+-    100+ attributes
+-    URL of the scraped player
+-    Player positions, with the role in the club and in the national team
+-    Player attributes with statistics as Attacking, Skills, Defense, Mentality, GK Skills, etc.
+-    Player personal data like Nationality, Club, DateOfBirth, Wage, Salary, etc.
+
+
+
+# Links
+
+- [FIFA 20 Player attributes](https://www.fifauteam.com/fifa-20-attributes-guide/)
+- [Slides](https://sites.google.com/view/aprendizaje-no-supervisado/)
+- [Data source - sofifa page](https://sofifa.com/)
+
+```{python}
+import numpy as np
+import pandas as pd
+pd.set_option('display.max_columns',100)
+pd.set_option('display.max_rows',1000)
+import itertools
+import warnings
+warnings.filterwarnings("ignore")
+import io
+```
+
+```{python}
+from plotly.offline import init_notebook_mode, plot,iplot
+import plotly.graph_objs as go
+init_notebook_mode(connected=True)
+import matplotlib.pyplot as plt
+import plotly.tools as tls#visualization
+import plotly.figure_factory as ff#visualization
+import seaborn as sns
+```
+
+```{python}
+df=pd.read_csv("players_20.csv")
+df.head(4)
+```
+
+# First let's explore the features of the dataset
+
+
+# Features - Attributes
+
+```{python}
+pd.set_option('display.max_seq_items', None)
+print('There are', len(df.columns), 'features')
+df.columns
+```
+
+```{python}
+identifier_features = ["sofifa_id", "short_name", "long_name","overall"]
+```
+
+The features can be divided in a few categories:
+- Goalkeeping
+- Physical
+- Defending
+- Shooting
+- Pace
+- Dribbling
+- Passing
+
+
+# Goalkeepers attributes
+
+
+<img src="imgs/goalkeepers.png" />
+
+
+
+* **Diving**: Diving is GK’s ability to make a save whilst diving through the air. It is directly affected by the player’s **height**.
+* **Handling**: Handling is an exclusive goalkeeper attribute used to measures how cleanly he catches the ball and does he hold on to it. In other words, it is the frequency that the keeper catches the ball rather than parrying it and whether or not he holds onto it.
+* **Kicking**: Kicking it’s another attribute that only goalkeepers have, used to measures the length and accuracy of goal kicks, from out of the hands or on the ground. The length and accuracy of throws are partially determined by the kicking attribute but mainly determined by the long throw trait. 
+* **GK_Positioning**: Positioning for goalkeepers is slightly different. It is the GK’s ability to position himself correctly when saving shots. It also affects the way how a goalkeeper reacts to crosses.
+* **Reflexes**: Reflexes stat is the agility of the goalkeeper when making a save. In other words, it determines how quickly the goalkeeper reacts to a shot on goal. If the stat is low he will make a move later or could miss it entirely.
+* **Speed**: This is another stat that only goalkeepers have. It is the ability to close down an opponent in one-on-one situations. This attribute is especially important if you use the off-side trap to stop your opponents.
+
+```{python}
+gk_features = identifier_features + ["gk_diving","gk_handling","gk_positioning","gk_reflexes","gk_speed"]
+goalkeepers = df[gk_features].dropna(subset=gk_features)
+```
+
+```{python}
+goalkeepers.head(3)
+```
+
+```{python}
+goalkeepers.describe()
+```
+
+## Goalkeepers overall performance vs global performance
+
+```{python}
+x = goalkeepers['overall']
+y= df['overall']
+plt.hist([x, y], bins=20, label=['goalkeepers', 'global'],color = ["orangered","darkcyan"], lw=0)
+plt.legend(loc='upper right')
+plt.show()
+```
+
+# Physical Attributes
+
+
+<img src="imgs/physical.png"/>
+
+
+* **Aggression**:measures the frequency and the aggression of jostling, tackling and slide tackling. It is the attribute which determines the player’s power of will or commitment to a match.
+* **Jumping**:Jumping is the player’s ability and quality for jumping from the surface for headers. The higher the value is, the higher the player can jump. Like many others, this one is fairly useless without its *related attributes*. For example, for a player to be really good in the air, he needs to have high jumping, strength aggression and heading accuracy stats. Obviously, his height may also help a lot. A very tall player does not need to have a high jumping attribute to connect to the ball.
+* **Stamina**: Stamina determines the rate at which a player will tire during a game. It evaluates how tired your player gets as the match approaches half time or full time.
+* **Strength**: Strength is about the quality or state of being physically strong. The higher the value, the more likely the player will win a physical challenge. Your player’s strength stat will decide how they cope with any physical battles, so a good score in this area is important for anyone with defensive responsibilities. It’s also a desirable attribute to have for at least one of your strikers, just to give you a chance in 50-50s with defenders.
+
+```{python}
+#for debug
+pd.set_option('display.max_seq_items', None)
+[x  for x in df.columns.sort_values() if "st" in x]
+```
+
+```{python}
+physical_features = identifier_features + ["power_strength","power_stamina","power_jumping","mentality_aggression"]
+physical = df[physical_features]
+physical.describe()
+```
+
+```{python}
+hists = []
+phys_features = ["power_strength","power_stamina","power_jumping","mentality_aggression"]
+for x in phys_features:
+    hists.append(physical[x])
+plt.hist(hists, bins=10, label = phys_features,color=['darkred','darkcyan', 'darkorange','darkgreen'], alpha=.8)
+plt.legend(loc='upper right',bbox_to_anchor=(1.6, 1),fontsize='large')
+plt.show()
+```
+
+# Defending Attributes
+
+
+<img src="imgs/defending.png"/>
+
+
+* **Heading accuracy**: This stats measures the heading accuracy of the player for either a pass or a shot.
+* **Interceptions**: Interception determines the ability to read the game and intercept passes.
+* **Marking**: Marking is the ability to track and defend an opposing player. In other words, it is player’s ability to stay close to an opposing attacker and stop him getting to a cross/pass from a teammate. Also contributes to tracking runs.
+* **Sliding tackle**: This stats measures the ability of the player to time sliding tackles so that they win the ball rather than give away a foul.
+* **Standing tackle**: This stats measures the ability of the player to time sliding tackles so that they win the ball rather than give away a foul.
+
+```{python}
+#for debug
+#international_reputation
+pd.set_option('display.max_seq_items', None)
+[x  for x in df.columns.sort_values() if "def" in x]
+```
+
+```{python}
+defending_features = identifier_features + ["defending_standing_tackle","defending_sliding_tackle","attacking_heading_accuracy","mentality_interceptions","defending_marking"]
+defending = df[defending_features]
+defending.head(1)
+```
+
+```{python}
+hists = []
+def_features = ["defending_standing_tackle","defending_sliding_tackle","attacking_heading_accuracy","mentality_interceptions","defending_marking"]
+for x in def_features:
+    hists.append(defending[x])
+plt.hist(hists, bins=10, label = def_features,color=['darkred','darkcyan', 'darkorange','darkgreen', 'darkblue'], alpha=.8)
+plt.legend(loc='upper right',bbox_to_anchor=(1.6, 1),fontsize='large')
+plt.show()
+```
