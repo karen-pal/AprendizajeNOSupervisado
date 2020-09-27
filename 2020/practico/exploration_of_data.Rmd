@@ -28,6 +28,8 @@ jupyter:
 - [FIFA 20 Player attributes](https://www.fifauteam.com/fifa-20-attributes-guide/)
 - [Slides](https://sites.google.com/view/aprendizaje-no-supervisado/)
 - [Data source - sofifa page](https://sofifa.com/)
+- [Some cool explorations on the FIFA18 dataset. No code](https://github.com/4m4n5/fifa18-all-player-statistics)
+- [Cool exploration FIFA18 WITH CODE](https://github.com/YarkoKhamar/DAProject/blob/master/ExploratoryAnalysis.ipynb)
 
 ```{python}
 import numpy as np
@@ -53,6 +55,13 @@ import seaborn as sns
 ```{python}
 df=pd.read_csv("players_20.csv")
 df.head(4)
+```
+
+# Distributions
+
+```{python}
+df.hist(bins=20, figsize=(20,20))
+plt.tight_layout()
 ```
 
 # First let's explore the features of the dataset
@@ -145,7 +154,7 @@ hists = []
 phys_features = ["power_strength","power_stamina","power_jumping","mentality_aggression"]
 for x in phys_features:
     hists.append(physical[x])
-plt.hist(hists, bins=10, label = phys_features,color=['darkred','darkcyan', 'darkorange','darkgreen'], alpha=.8)
+plt.hist(hists, bins=10, label = phys_features,color=['darkred','darkcyan', 'darkorange','darkblue'], alpha=.8)
 plt.legend(loc='upper right',bbox_to_anchor=(1.6, 1),fontsize='large')
 plt.show()
 ```
@@ -163,13 +172,6 @@ plt.show()
 * **Standing tackle**: This stats measures the ability of the player to time sliding tackles so that they win the ball rather than give away a foul.
 
 ```{python}
-#for debug
-#international_reputation
-pd.set_option('display.max_seq_items', None)
-[x  for x in df.columns.sort_values() if "def" in x]
-```
-
-```{python}
 defending_features = identifier_features + ["defending_standing_tackle","defending_sliding_tackle","attacking_heading_accuracy","mentality_interceptions","defending_marking"]
 defending = df[defending_features]
 defending.head(1)
@@ -183,4 +185,42 @@ for x in def_features:
 plt.hist(hists, bins=10, label = def_features,color=['darkred','darkcyan', 'darkorange','darkgreen', 'darkblue'], alpha=.8)
 plt.legend(loc='upper right',bbox_to_anchor=(1.6, 1),fontsize='large')
 plt.show()
+```
+
+<img src="imgs/a.gif"/>
+
+```{python}
+fig= plt.figure()
+x = df["overall"]
+y = defending[def_features[4]]
+plt.hist([x,y], bins=29, label=["overall",def_features[4]],color=['darkcyan','darkorange'], animated=True)
+plt.legend(loc='upper right',bbox_to_anchor=(1.7, 1),fontsize='large')
+plt.ylim(0, 4000)
+plt.show()
+```
+
+# Shooting Features (Delanteros)
+
+
+<img src="imgs/shooting.png"/>
+
+
+* **Finishing**:Finishing is the accuracy of shots using foot, inside the penalty area.
+* **Long shots**: This attribute measures the accuracy of shots from outside the penalty area. This is a great attribute for **midfielders** to have.
+* **Penalties**: This attribute measures the accuracy of shots from inside the penalty area.
+* **Positioning**:Positioning is the player’s ability to take up good positions on the field during a game. The higher this stat, the more likely a player is to make enough space to receive the ball in dangerous areas.
+* **Shot power**:Shot Power evaluates how hard the player hits the ball when taking a shot at goal. It is the amount of power a player can put into a shot while still keeping it accurate.
+* **Volleys**: This attribute measures the accuracy and power of volleys at goal. It affects the technique and accuracy of shots taken while the ball is in the air. This tends to be coupled with the **balance trait** if he is not fully facing the goal.
+
+```{python}
+shooting_features = ["attacking_finishing", "power_long_shots", "mentality_penalties",
+                    "mentality_positioning"]
+#for debug
+#international_reputation
+pd.set_option('display.max_seq_items', None)
+[x  for x in df.columns.sort_values() if "posit" in x]
+```
+
+```{python}
+df["player_positions"].head(3)
 ```
